@@ -19,7 +19,7 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 LOGGING_API_SERVER_PORT = os.getenv("LOGGING_API_SERVER_PORT", "8080")
 LOGGING_API_SERVER_MODE = os.getenv("LOGGING_API_SERVER_MODE", "development")
-LOGGING_API_PREFIX = f"/logging" if LOGGING_API_SERVER_MODE == "production" else ""
+LOGGING_API_PREFIX = f"/logging" if LOGGING_API_SERVER_MODE == "release" else ""
 
 app = FastAPI()
 
@@ -92,6 +92,11 @@ async def insert_visited_log(visited_log: VisitedLog):
         return {"Log inserted": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+# Health check
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 # Add prefix to all routes
 add_prefix_to_routes(app, LOGGING_API_PREFIX)
