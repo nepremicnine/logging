@@ -42,7 +42,7 @@ retry_strategy = retry(
 )
 
 # Insert a search log
-@app.post(f"${LOGGING_API_PREFIX}"+"/search_log")
+@app.post(f"{LOGGING_API_PREFIX}/search_log")
 async def insert_search_log(search_log: SearchLog):
     try:
         supabase = get_supabase_client()
@@ -69,7 +69,7 @@ async def insert_search_log(search_log: SearchLog):
         raise HTTPException(status_code=400, detail=str(e))
 
 # Insert a visited log
-@app.post(f"${LOGGING_API_PREFIX}"+"/visited_log")
+@app.post(f"{LOGGING_API_PREFIX}/visited_log")
 async def insert_visited_log(visited_log: VisitedLog):
     try:
         supabase = get_supabase_client()
@@ -88,6 +88,6 @@ async def insert_visited_log(visited_log: VisitedLog):
         raise HTTPException(status_code=400, detail=str(e))
     
 # Health check
-@app.get(f"${LOGGING_API_PREFIX}"+"/health")
+@app.get(f"{LOGGING_API_PREFIX}/health")
 async def health_check():
     return {"status": "ok"}
