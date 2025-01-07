@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.routing import APIRoute
-from models import SearchLog, VisitedLog
-from auth_handler import verify_jwt_token, get_supabase_client
+from src.models import SearchLog, VisitedLog
+from src.auth_handler import verify_jwt_token, get_supabase_client
 from dotenv import load_dotenv
 import os
 import requests
