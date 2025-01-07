@@ -3,7 +3,6 @@ from typing import Optional
 
 class SearchLog(BaseModel):
     user_id: str
-    property_id: str
     search_query: str
     location: str
     location_lat: float
