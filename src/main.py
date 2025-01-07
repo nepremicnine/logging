@@ -23,12 +23,6 @@ LOGGING_API_PREFIX = f"/logging" if LOGGING_API_SERVER_MODE == "release" else ""
 
 app = FastAPI()
 
-# Add prefix to all routes dynamically
-def add_prefix_to_routes(app: FastAPI, prefix: str):
-    """Add a prefix to all API routes."""
-    for route in app.routes:
-        if isinstance(route, APIRoute):
-            route.path = f"{prefix}{route.path}"
 
 # Circuit Breaker Configuration
 breaker = pybreaker.CircuitBreaker(
@@ -48,7 +42,7 @@ retry_strategy = retry(
 )
 
 # Insert a search log
-@app.post("/search_log")
+@app.post(f"${LOGGING_API_PREFIX}"+"/search_log")
 async def insert_search_log(search_log: SearchLog):
     try:
         supabase = get_supabase_client()
@@ -75,7 +69,7 @@ async def insert_search_log(search_log: SearchLog):
         raise HTTPException(status_code=400, detail=str(e))
 
 # Insert a visited log
-@app.post("/visited_log")
+@app.post(f"${LOGGING_API_PREFIX}"+"/visited_log")
 async def insert_visited_log(visited_log: VisitedLog):
     try:
         supabase = get_supabase_client()
@@ -94,9 +88,6 @@ async def insert_visited_log(visited_log: VisitedLog):
         raise HTTPException(status_code=400, detail=str(e))
     
 # Health check
-@app.get("/health")
+@app.get(f"${LOGGING_API_PREFIX}"+"/health")
 async def health_check():
     return {"status": "ok"}
-
-# Add prefix to all routes
-add_prefix_to_routes(app, LOGGING_API_PREFIX)
