@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: logging
+  namespace: nepremicnine
+  labels:
+    app: logging
+spec:
+  type: ClusterIP
+  selector:
+    app: logging
+  ports:
+    - protocol: TCP
+      name: http
+      port: 80
+      targetPort: 8080

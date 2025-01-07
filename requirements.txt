@@ -1,0 +1,9 @@
+fastapi==0.115.4
+supabase==2.3.8
+uvicorn==0.32.0
+pydantic==2.6.3
+pydantic[email]==2.6.3
+pyjwt==2.9.0
+python-dotenv==1.0.1
+httpx==0.25.2
+gotrue==2.1.0

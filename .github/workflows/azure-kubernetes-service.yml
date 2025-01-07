@@ -1,0 +1,71 @@
+name: Build and deploy an app to AKS
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  RESOURCE_GROUP: "nepremicnine-resource-group-prod"
+  CLUSTER_NAME: "nepremicnine-cluster-prod"
+
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/nepremicnine-logging:${{ github.sha }}
+
+  deploy:
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up kubelogin
+        uses: azure/use-kubelogin@v1
+        with:
+          kubelogin-version: "v0.0.24"
+
+      - name: Get K8s context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          admin: "false"
+          use-kubelogin: "true"
+
+      - name: Deploys application
+        uses: azure/k8s-deploy@v4
+        with:
+          action: deploy
+          namespace: nepremicnine
+          manifests: |
+            ./kubernetes/deployment.yaml
+            ./kubernetes/service.yaml
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/nepremicnine-logging:${{ github.sha }}

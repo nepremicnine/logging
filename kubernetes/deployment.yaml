@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logging
+  namespace: nepremicnine
+spec:
+  selector:
+    matchLabels:
+      app: logging
+  template:
+    metadata:
+      labels:
+        app: logging
+    spec:
+      containers:
+        - name: logging
+          image: potocnikvid/nepremicnine-logging
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SUPABASE_SERVICE_ROLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: SUPABASE_SERVICE_ROLE_KEY
+            - name: SUPABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: SUPABASE_URL
+            - name: SUPABASE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: SUPABASE_KEY
+            - name: SUPABASE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: SUPABASE_JWT_SECRET
+            - name: LOGGING_SERVER_MODE
+              value: "release"
+            - name: LOGGING_SERVER_PORT
+              value: "8080"
+          resources:
+            limits:
+              cpu: "0.1"
+              memory: "256Mi"
+            requests:
+              cpu: "0.01"
+              memory: "32Mi"
+          readinessProbe:
+            httpGet:
+              path: /logging/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 30
+            successThreshold: 10
+            failureThreshold: 30
+          livenessProbe: 
+            httpGet:
+              path: /logging/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
