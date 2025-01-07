@@ -7,3 +7,5 @@ pyjwt==2.9.0
 python-dotenv==1.0.1
 httpx==0.25.2
 gotrue==2.1.0
+tenacity==9.0.0
+pybreaker==1.2.0
