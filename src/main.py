@@ -46,7 +46,6 @@ async def insert_search_log(search_log: SearchLog):
             [
                 {
                     "user_id": search_log.user_id,
-                    "property_id": search_log.property_id,
                     "search_query": search_log.search_query,
                     "location_lat": search_log.location_lat,
                     "location_long": search_log.location_long,
