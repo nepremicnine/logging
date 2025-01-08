@@ -21,8 +21,14 @@ LOGGING_SERVER_PORT = os.getenv("LOGGING_SERVER_PORT", "8080")
 LOGGING_SERVER_MODE = os.getenv("LOGGING_SERVER_MODE", "development")
 LOGGING_PREFIX = f"/logging" if LOGGING_SERVER_MODE == "release" else ""
 
-app = FastAPI()
-
+app = FastAPI(
+    title="Logging API",
+    description="API for logging user search and visited properties",
+    version="1.0.0",
+    openapi_url=f"{LOGGING_PREFIX}/openapi.json",
+    docs_url=f"{LOGGING_PREFIX}/docs",
+    redoc_url=f"{LOGGING_PREFIX}/redoc",
+)
 
 # Circuit Breaker Configuration
 breaker = pybreaker.CircuitBreaker(
