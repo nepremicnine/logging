@@ -43,6 +43,16 @@ spec:
               value: "release"
             - name: LOGGING_SERVER_PORT
               value: "8080"
+            - name: FRONTEND_URL
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: FRONTEND_URL
+            - name: BACKEND_URL
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: BACKEND_URL
           resources:
             limits:
               cpu: "0.1"

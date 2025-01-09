@@ -7,6 +7,7 @@ import os
 import requests
 import pybreaker
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, RetryError
+from fastapi.middleware.cors import CORSMiddleware
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +21,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 LOGGING_SERVER_PORT = os.getenv("LOGGING_SERVER_PORT", "8080")
 LOGGING_SERVER_MODE = os.getenv("LOGGING_SERVER_MODE", "development")
 LOGGING_PREFIX = f"/logging" if LOGGING_SERVER_MODE == "release" else ""
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
 
 app = FastAPI(
     title="Logging API",
@@ -29,6 +32,22 @@ app = FastAPI(
     docs_url=f"{LOGGING_PREFIX}/docs",
     redoc_url=f"{LOGGING_PREFIX}/redoc",
 )
+
+origins = [
+    FRONTEND_URL,
+    BACKEND_URL,
+    "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Circuit Breaker Configuration
 breaker = pybreaker.CircuitBreaker(
