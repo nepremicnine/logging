@@ -10,3 +10,5 @@ gotrue==2.1.0
 tenacity==9.0.0
 pybreaker==1.2.0
 requests==2.31.0
+kafka-python==2.0.2
+asyncio==3.4.3

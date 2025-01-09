@@ -53,6 +53,16 @@ spec:
                 secretKeyRef:
                   name: secrets
                   key: BACKEND_URL
+            - name: KAFKA_BROKER
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: KAFKA_BROKER
+            - name: KAFKA_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: KAFKA_PORT
           resources:
             limits:
               cpu: "0.1"
