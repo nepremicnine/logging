@@ -12,6 +12,7 @@ from kafka import KafkaConsumer
 import asyncio
 import json
 from contextlib import asynccontextmanager
+from concurrent.futures import ThreadPoolExecutor
 
 # Load environment variables
 load_dotenv()
@@ -33,31 +34,74 @@ KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost")
 KAFKA_PORT = os.getenv("KAFKA_PORT", "9092")
 TOPICS = ["property-search-events", "property-click-events"]
 
-# Create a Kafka consumer (initialized later)
-consumer = None
 
-# Lifespan context manager for FastAPI
+executor = ThreadPoolExecutor(max_workers=1)
+
+# Kafka Consumer Logic
+
+
+def kafka_consumer_thread():
+    try:
+        consumer = KafkaConsumer(
+            *TOPICS,
+            bootstrap_servers=f"{KAFKA_BROKER}:{KAFKA_PORT}",
+            group_id="logging-service-group",
+            auto_offset_reset="earliest",
+            enable_auto_commit=True,
+        )
+        print("Kafka consumer started")
+        for message in consumer:
+            process_message_sync(message)
+    except Exception as e:
+        print(f"Error in Kafka consumer thread: {e}")
+
+# Synchronous message processing function
+
+
+def process_message_sync(message):
+    try:
+        topic = message.topic
+        data = json.loads(message.value.decode("utf-8"))
+
+        if topic == "property-search-events":
+            print(f"Processing search event: {data}")
+            supabase = get_supabase_client()
+            supabase.table("search_log").insert({
+                "user_id": data["user_id"],
+                "search_query": data["search_query"],
+                "location_lat": data["location_lat"],
+                "location_long": data["location_long"],
+                "location_max_dist": data["location_max_dist"],
+                "types": data["types"],
+                "price_min": data["price_min"],
+                "price_max": data["price_max"],
+                "size_min": data["size_min"],
+                "size_max": data["size_max"],
+            }).execute()
+        elif topic == "property-click-events":
+            print(f"Processing click event: {data}")
+            supabase = get_supabase_client()
+            supabase.table("visited_log").insert({
+                "user_id": data["user_id"],
+                "property_id": data["property_id"],
+            }).execute()
+    except Exception as e:
+        print(f"Error processing Kafka message: {e}")
+
+# Lifespan with Thread Management
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global consumer
-    consumer = KafkaConsumer(
-        *TOPICS,
-        bootstrap_servers=f"{KAFKA_BROKER}:{KAFKA_PORT}",
-        group_id="logging-service-group",
-        auto_offset_reset="earliest",  # Start consuming from the earliest message
-        enable_auto_commit=True,
-    )
-
-
-    # Start the Kafka consumer
-    loop = asyncio.get_event_loop()
-    loop.create_task(consume_kafka_messages())
-
+    global executor
+    # Start Kafka consumer in a separate thread
+    executor.submit(kafka_consumer_thread)
     yield  # Application starts here
+    # Shut down the ThreadPoolExecutor on app shutdown
+    executor.shutdown(wait=True)
 
-    # Shutdown: close Kafka consumer
-    consumer.close()
 
+# Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Logging API",
     description="API for logging user search and visited properties",
@@ -91,54 +135,20 @@ breaker = pybreaker.CircuitBreaker(
 )
 
 # Retry Configuration
+
+
 def is_transient_error(exception):
     """Define what qualifies as a transient error."""
     return isinstance(exception, requests.exceptions.RequestException)
 
+
 retry_strategy = retry(
     stop=stop_after_attempt(3),  # Retry up to 3 times
-    wait=wait_exponential(multiplier=1, min=2, max=6),  # Exponential backoff: 2s, 4s, 6s
-    retry=retry_if_exception_type(requests.exceptions.RequestException)  # Retry only on network-related errors
+    # Exponential backoff: 2s, 4s, 6s
+    wait=wait_exponential(multiplier=1, min=2, max=6),
+    # Retry only on network-related errors
+    retry=retry_if_exception_type(requests.exceptions.RequestException)
 )
-
-
-# Process Kafka messages
-async def process_message(topic, message):
-    """Handle messages based on topic."""
-    key = message.key.decode("utf-8")
-    data = json.loads(message.value.decode("utf-8"))
-    if topic == "property-search-events":
-        print(f"Processing search event: {data}")
-        # Add logic to insert search logs into the database (Supabase)
-        supabase = get_supabase_client()
-        supabase.table("search_log").insert({
-            "user_id": data["user_id"],
-            "search_query": data["search_query"],
-            "location_lat": data["location_lat"],
-            "location_long": data["location_long"],
-            "location_max_dist": data["location_max_dist"],
-            "types": data["types"],
-            "price_min": data["price_min"],
-            "price_max": data["price_max"],
-            "size_min": data["size_min"],
-            "size_max": data["size_max"],
-        }).execute()
-    elif topic == "property-click-events":
-        print(f"Processing click event: {data}")
-        # Add logic to insert visited logs into the database (Supabase)
-        supabase = get_supabase_client()
-        supabase.table("visited_log").insert({
-            "user_id": data["user_id"],
-            "property_id": data["property_id"],
-        }).execute()
-
-# Process Kafka messages asynchronously
-async def consume_kafka_messages():
-    try:
-        for message in consumer:
-            await process_message(message.topic, message)
-    except Exception as e:
-        print(f"Error consuming Kafka messages: {e}")
 
 
 # Insert a search log
@@ -169,6 +179,8 @@ async def insert_search_log(search_log: SearchLog):
         raise HTTPException(status_code=400, detail=str(e))
 
 # Insert a visited log
+
+
 @app.post(f"{LOGGING_PREFIX}/visited_log")
 async def insert_visited_log(visited_log: VisitedLog):
     try:
@@ -186,8 +198,10 @@ async def insert_visited_log(visited_log: VisitedLog):
         return {"Log inserted": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
 # Health check
+
+
 @app.get(f"{LOGGING_PREFIX}/health")
 async def health_check():
     return {"status": "ok"}
