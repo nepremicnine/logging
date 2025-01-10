@@ -65,6 +65,7 @@ app = FastAPI(
     openapi_url=f"{LOGGING_PREFIX}/openapi.json",
     docs_url=f"{LOGGING_PREFIX}/docs",
     redoc_url=f"{LOGGING_PREFIX}/redoc",
+    lifespan=lifespan,
 )
 
 origins = [
