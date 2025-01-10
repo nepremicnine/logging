@@ -67,16 +67,16 @@ def process_message_sync(message):
             print(f"Processing search event: {data}")
             supabase = get_supabase_client()
             supabase.table("search_log").insert({
-                "user_id": data["user_id"],
-                "search_query": data["search_query"],
-                "location_lat": data["location_lat"],
-                "location_long": data["location_long"],
-                "location_max_dist": data["location_max_dist"],
+                "user_id": data["userId"],
+                "search_query": data["searchQuery"],
+                "location_lat": data["locationLat"],
+                "location_long": data["locationLon"],
+                "location_max_dist": data["locationMaxDistance"],
                 "types": data["types"],
-                "price_min": data["price_min"],
-                "price_max": data["price_max"],
-                "size_min": data["size_min"],
-                "size_max": data["size_max"],
+                "price_min": data["priceMin"],
+                "price_max": data["priceMax"],
+                "size_min": data["sizeMin"],
+                "size_max": data["sizeMax"],
             }).execute()
         elif topic == "property-click-events":
             print(f"Processing click event: {data}")
