@@ -68,15 +68,15 @@ def process_message_sync(message):
             supabase = get_supabase_client()
             supabase.table("search_log").insert({
                 "user_id": data["userId"],
-                "search_query": data["searchQuery"],
-                "location_lat": data["locationLat"],
-                "location_long": data["locationLon"],
-                "location_max_dist": data["locationMaxDistance"],
-                "types": data["types"],
-                "price_min": data["priceMin"],
-                "price_max": data["priceMax"],
-                "size_min": data["sizeMin"],
-                "size_max": data["sizeMax"],
+                "search_query": data["searchQuery"] if "searchQuery" in data else None,
+                "location_lat": data["locationLat"] if "locationLat" in data else None,
+                "location_long": data["locationLon"] if "locationLon" in data else None,
+                "location_max_dist": data["locationMaxDistance"] if "locationMaxDistance" in data else None,
+                "types": data["types"] if "types" in data else None,
+                "price_min": data["priceMin"] if "priceMin" in data else None,
+                "price_max": data["priceMax"] if "priceMax" in data else None,
+                "size_min": data["sizeMin"] if "sizeMin" in data else None,
+                "size_max": data["sizeMax"] if "sizeMax" in data else None,
             }).execute()
         elif topic == "property-click-events":
             print(f"Processing click event: {data}")
