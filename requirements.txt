@@ -12,3 +12,4 @@ pybreaker==1.2.0
 requests==2.31.0
 kafka-python==2.0.2
 asyncio==3.4.3
+prometheus-fastapi-instrumentator==7.0.0

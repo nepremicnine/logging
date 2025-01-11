@@ -13,6 +13,10 @@ import asyncio
 import json
 from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
+from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import Counter, Gauge, Summary
+from time import time
+from fastapi import FastAPI, HTTPException, Request
 
 # Load environment variables
 load_dotenv()
@@ -126,6 +130,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize Prometheus instrumentator
+Instrumentator().instrument(app).expose(app, endpoint=f"{LOGGING_PREFIX}/metrics")
+
+# Additional custom metrics (if needed)
+REQUEST_COUNT = Counter('request_count', 'Total number of requests', ['method', 'endpoint', 'status_code'])
+REQUEST_LATENCY = Summary('request_latency_seconds', 'Latency of requests in seconds')
+
+@app.middleware("http")
+async def add_prometheus_metrics(request: Request, call_next):
+    start_time = time()
+    response = await call_next(request)
+    process_time = time() - start_time
+
+    # Record custom metrics
+    REQUEST_COUNT.labels(
+        method=request.method,
+        endpoint=request.url.path,
+        status_code=response.status_code
+    ).inc()
+
+    REQUEST_LATENCY.observe(process_time)
+
+    return response
 
 
 # Circuit Breaker Configuration
